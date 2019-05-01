@@ -38,7 +38,7 @@ public class SumoBehavior : MonoBehaviour
         Application.targetFrameRate = 30;
         try
         {
-Initialize();
+            Initialize();
         }
         catch (Exception r) {
             Debug.Log(" r = " + r.Message + " " + r.StackTrace);
@@ -77,10 +77,12 @@ Initialize();
         conn.addOption("step-length", "0.3333"); //timestep 33.33ms - 30 frames a second
         conn.addOption("start", null);
         conn.runServer();
+
         for (int i = 0; i < 100; i++)
         {
             conn.do_timestep();
         }
+
         lanes = new List<GameObject>();
         vehicles = new List<GameObject>();
 
@@ -106,8 +108,6 @@ Initialize();
         try
         {
             RemoveVehicles();
-
-            //int simtime = (int)conn.do_job_get(Simulation.getCurrentTime());
 
             SumoStringList carIds = (SumoStringList)conn.do_job_get(de.tudresden.sumo.cmd.Vehicle.getIDList());
 
@@ -153,6 +153,7 @@ Initialize();
 
         try {
             // creation query
+            // Args - ID, TYPE, ROUTE, TIME, DISTANCE, SPEED, idk wtf byte is.
             conn.do_job_set(de.tudresden.sumo.cmd.Vehicle.add("my_"+ createdVehiclesCount++.ToString(), "car", "", 0, 15, 5, new byte()));
         }
         catch (Exception e) {
