@@ -10,9 +10,12 @@ public class SumoBehavior : MonoBehaviour
 {
     public GameObject carPrefab;
     public GameObject lanePrefab;
+    public float LaneHeight;
+    public float CarHeight;
+
 
     private string sumo_bin = "C:\\Program Files (x86)\\Eclipse\\Sumo\\bin\\sumo-gui.exe";
-    private string config_file = "C:\\Users\\ghost\\Desktop\\Other\\Thesis\\traci-demo-master\\demo.sumocfg";
+    private string config_file = "C:\\Users\\Joey\\Desktop\\Aarti\\traci-demo-master\\demo.sumocfg";
     private SumoTraciConnection conn;
 
 
@@ -53,17 +56,6 @@ Initialize();
               UpdateVehicles();
     }
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.G)) {
-            Debug.Log("make veh");
-            if (CreateNewVehicle()) {
-                vehiclesCreationSuccess = false;
-                vehiclesCreationSuccess = ReadVehicles();
-            }
-        }
-    }
-
     /*
      * Initialize 
      * 
@@ -101,12 +93,19 @@ Initialize();
     }
 
 
+    void RemoveVehicles() {
+        foreach (GameObject g in vehicles) {
+            Destroy(g);
+        }
+        vehicles.Clear();
+    }
+
     bool ReadVehicles()
     {
 
         try
         {
-            vehicles.Clear();
+            RemoveVehicles();
 
             //int simtime = (int)conn.do_job_get(Simulation.getCurrentTime());
 
@@ -114,7 +113,6 @@ Initialize();
 
             foreach (string id in carIds)
             {
-                Debug.Log("id - " + id);
                 conn.do_timestep();
                 // create new car
                 GameObject newVehicle = Instantiate(carPrefab);
@@ -123,11 +121,9 @@ Initialize();
                 // get position
                 SumoPosition2D position = (SumoPosition2D)conn.do_job_get(de.tudresden.sumo.cmd.Vehicle.getPosition(id));
                 // assign position
-                newVehicle.transform.position = new Vector3((float)position.x,0.5f, (float)position.y);
+                newVehicle.transform.position = new Vector3((float)position.x,CarHeight, (float)position.y);
                 // get speed
                 double speed = double.Parse(conn.do_job_get(de.tudresden.sumo.cmd.Vehicle.getSpeed(id)).ToString());
-                string sd = conn.do_job_get(de.tudresden.sumo.cmd.Vehicle.getRouteID(id)).ToString();
-                Debug.Log(" id = " + id + " type - " + sd);
                 // assign speed
                 newVehicle.GetComponent<VehicleContainer>().setSpeed(speed);
 
@@ -151,19 +147,25 @@ Initialize();
         return true;
     }
 
-    bool CreateNewVehicle() {
-        bool created = false;
+    public void CreateNewCar_Runtime() {
+
+        vehiclesCreationSuccess = false;
+
         try {
-            conn.do_job_set(de.tudresden.sumo.cmd.Vehicle.add("my_"+ createdVehiclesCount.ToString(), "car", "", 0, 15, 5, new byte()));
-            created = true;
+            // creation query
+            conn.do_job_set(de.tudresden.sumo.cmd.Vehicle.add("my_"+ createdVehiclesCount++.ToString(), "car", "", 0, 15, 5, new byte()));
         }
         catch (Exception e) {
-            Debug.Log(" Create ve - " + e.Message);
-            created = false;
-            return false;
+            Debug.Log("Runtime Vehicle Create Exception - " + e.Message);
+            return;
         }
 
-        return created;
+        Debug.Log("Successfully Created Vehicle" );
+
+        // refresh vehicles
+        vehiclesCreationSuccess = ReadVehicles();
+
+        return;
     }
 
     void UpdateVehicles()
@@ -176,7 +178,7 @@ Initialize();
                 // get new position of the car
                 SumoPosition2D newPosition = (SumoPosition2D)conn.do_job_get(de.tudresden.sumo.cmd.Vehicle.getPosition(v.GetComponent<VehicleContainer>().getId()));
                 // convert into vector3
-                Vector3 newPositonV3 = new Vector3((float)newPosition.x, 0.5f, (float)newPosition.y);
+                Vector3 newPositonV3 = new Vector3((float)newPosition.x, CarHeight, (float)newPosition.y);
                 // update the position of car
                 v.transform.position = newPositonV3;
             }
@@ -267,7 +269,9 @@ Initialize();
         ls.z = distance;
         ls.x = width;
         myLane.transform.localScale = ls;
-        myLane.transform.position = Vector3.Lerp(start, end, 0.5f);
+        Vector3 mid = Vector3.Lerp(start, end, 0.5f);
+        mid.y = LaneHeight;
+        myLane.transform.position = mid;
         myLane.transform.LookAt(end);
         return myLane;
 
